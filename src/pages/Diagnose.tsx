@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Camera, Leaf, AlertTriangle, CheckCircle, Pill, Search, Sparkles } from "lucide-react";
+import { Upload, Camera, Leaf, AlertTriangle, CheckCircle, Pill, Search, Sparkles, Shield } from "lucide-react";
 import leafDiagnosis from "@/assets/leaf-diagnosis.png";
 
 interface DiagnosisResult {
