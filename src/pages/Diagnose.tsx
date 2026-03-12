@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Camera, Leaf, AlertTriangle, CheckCircle, Pill } from "lucide-react";
+import { Upload, Camera, Leaf, AlertTriangle, CheckCircle, Pill, Search, Sparkles } from "lucide-react";
 import leafDiagnosis from "@/assets/leaf-diagnosis.png";
 
 interface DiagnosisResult {
@@ -11,26 +11,41 @@ interface DiagnosisResult {
   severity: "Low" | "Medium" | "High";
   description: string;
   treatments: string[];
+  prevention: string[];
 }
 
-const mockResults: DiagnosisResult[] = [
+const mockDiseases: DiagnosisResult[] = [
   {
     disease: "Early Blight (Alternaria solani)",
-    confidence: 94,
+    confidence: 96.4,
     severity: "Medium",
-    description: "Circular brown spots with concentric rings on lower leaves. Typically spreads in warm, humid conditions.",
+    description: "Detected circular brown lesions with characteristic concentric rings (target-like pattern) on the leaf surface. The infection is at an early-to-moderate stage, primarily affecting older lower foliage. Environmental conditions (warm, humid) favor further spread.",
     treatments: [
-      "Apply chlorothalonil-based fungicide every 7-10 days",
-      "Remove and destroy affected leaves immediately",
-      "Improve air circulation by proper spacing",
-      "Avoid overhead watering — use drip irrigation",
+      "Apply chlorothalonil or mancozeb-based fungicide every 7–10 days",
+      "Remove and safely destroy all affected leaves immediately",
+      "Improve canopy air circulation through proper plant spacing",
+      "Switch to drip irrigation — avoid wetting the foliage",
+    ],
+    prevention: [
+      "Rotate crops with non-solanaceous plants for 2–3 seasons",
+      "Use certified disease-free seeds and resistant varieties",
+      "Mulch around base to prevent soil-borne spore splash",
     ],
   },
+];
+
+const analysisSteps = [
+  "Preprocessing image...",
+  "Running MobileNetV2 feature extraction...",
+  "Analyzing leaf tissue patterns...",
+  "Cross-referencing with 50,000+ disease samples...",
+  "Generating treatment protocol...",
 ];
 
 const Diagnose = () => {
   const [image, setImage] = useState<string | null>(null);
   const [diagnosing, setDiagnosing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState<DiagnosisResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -43,10 +58,20 @@ const Diagnose = () => {
 
   const runDiagnosis = () => {
     setDiagnosing(true);
-    setTimeout(() => {
-      setResult(mockResults[0]);
-      setDiagnosing(false);
-    }, 2000);
+    setCurrentStep(0);
+    setResult(null);
+
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      if (step < analysisSteps.length) {
+        setCurrentStep(step);
+      } else {
+        clearInterval(interval);
+        setResult(mockDiseases[0]);
+        setDiagnosing(false);
+      }
+    }, 600);
   };
 
   const useSample = () => {
@@ -67,7 +92,7 @@ const Diagnose = () => {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Upload */}
+        {/* Upload Side */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -86,52 +111,87 @@ const Diagnose = () => {
               {!image ? (
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-background p-12 transition-colors hover:border-primary hover:bg-accent/50"
+                  className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-background p-16 transition-all hover:border-primary hover:bg-accent/50"
                 >
-                  <Upload className="mb-4 h-12 w-12 text-muted-foreground" />
-                  <p className="mb-1 font-medium">Click to upload or drag & drop</p>
-                  <p className="text-sm text-muted-foreground">JPG, PNG up to 10MB</p>
+                  <div className="mb-4 rounded-full bg-accent p-4 transition-colors group-hover:bg-primary">
+                    <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary-foreground" />
+                  </div>
+                  <p className="mb-1 font-display font-semibold">Click to upload or drag & drop</p>
+                  <p className="text-sm text-muted-foreground">JPG, PNG — up to 10MB</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-xl border">
-                    <img src={image} alt="Uploaded leaf" className="h-64 w-full object-contain bg-background" />
+                  <div className="overflow-hidden rounded-xl border bg-background">
+                    <img src={image} alt="Uploaded leaf" className="h-72 w-full object-contain" />
                   </div>
                   <div className="flex gap-3">
-                    <Button onClick={runDiagnosis} disabled={diagnosing} className="flex-1 gap-2">
-                      <Leaf className="h-4 w-4" />
-                      {diagnosing ? "Analyzing..." : "Run Diagnosis"}
+                    <Button onClick={runDiagnosis} disabled={diagnosing} size="lg" className="flex-1 gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      {diagnosing ? "Analyzing..." : "Run AI Diagnosis"}
                     </Button>
-                    <Button variant="outline" onClick={() => { setImage(null); setResult(null); }}>
+                    <Button variant="outline" size="lg" onClick={() => { setImage(null); setResult(null); }}>
                       Clear
                     </Button>
                   </div>
                 </div>
               )}
               {!image && (
-                <Button variant="ghost" className="mt-4 w-full text-sm text-muted-foreground" onClick={useSample}>
-                  Or try with a sample image →
+                <Button variant="ghost" className="mt-4 w-full gap-2 text-sm text-muted-foreground" onClick={useSample}>
+                  <Search className="h-4 w-4" /> Try with a sample image
                 </Button>
               )}
             </CardContent>
           </Card>
+
+          {/* How it works */}
+          <Card className="bg-accent/30">
+            <CardContent className="p-6">
+              <h3 className="mb-3 font-display text-sm font-semibold text-accent-foreground">How it works</h3>
+              <ol className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex gap-2"><span className="font-semibold text-primary">1.</span> Upload a clear photo of the affected leaf</li>
+                <li className="flex gap-2"><span className="font-semibold text-primary">2.</span> Our AI analyzes patterns across 50,000+ disease samples</li>
+                <li className="flex gap-2"><span className="font-semibold text-primary">3.</span> Receive diagnosis, severity, and treatment in seconds</li>
+              </ol>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Results */}
+        {/* Results Side */}
         <div className="space-y-6">
           {diagnosing && (
             <Card className="border-primary/30">
-              <CardContent className="flex flex-col items-center p-12">
-                <Leaf className="mb-4 h-10 w-10 animate-pulse-soft text-primary" />
-                <p className="font-display font-semibold">Analyzing leaf patterns...</p>
-                <p className="text-sm text-muted-foreground">AI Vision Engine processing</p>
+              <CardContent className="p-8">
+                <div className="mb-6 flex items-center gap-3">
+                  <Leaf className="h-8 w-8 animate-pulse-soft text-primary" />
+                  <div>
+                    <p className="font-display text-lg font-semibold">AI Analysis in Progress</p>
+                    <p className="text-sm text-muted-foreground">Vision Engine processing your image</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {analysisSteps.map((step, i) => (
+                    <div key={i} className={`flex items-center gap-3 text-sm transition-all duration-300 ${
+                      i <= currentStep ? "text-foreground" : "text-muted-foreground/40"
+                    }`}>
+                      {i < currentStep ? (
+                        <CheckCircle className="h-4 w-4 shrink-0 text-success" />
+                      ) : i === currentStep ? (
+                        <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      ) : (
+                        <div className="h-4 w-4 shrink-0 rounded-full border-2 border-muted" />
+                      )}
+                      {step}
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
 
           {result && (
             <>
-              <Card className="border-warning/40">
+              <Card className="overflow-hidden border-warning/40">
+                <div className="h-1.5 bg-gradient-to-r from-warning via-secondary to-warning" />
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -140,19 +200,19 @@ const Diagnose = () => {
                     <Badge className={severityColor(result.severity)}>{result.severity} Severity</Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5">
                   <div>
                     <p className="font-display text-xl font-bold">{result.disease}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="h-2 flex-1 rounded-full bg-muted">
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
-                          className="h-full rounded-full bg-primary transition-all"
+                          className="h-full rounded-full bg-primary transition-all duration-1000"
                           style={{ width: `${result.confidence}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium">{result.confidence}%</span>
+                      <span className="font-display text-lg font-bold text-primary">{result.confidence}%</span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Confidence Score</p>
+                    <p className="mt-1 text-xs text-muted-foreground">AI Confidence Score</p>
                   </div>
                   <p className="text-sm leading-relaxed text-muted-foreground">{result.description}</p>
                 </CardContent>
@@ -161,7 +221,7 @@ const Diagnose = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-display text-lg">
-                    <Pill className="h-5 w-5 text-success" /> Recommended Treatment
+                    <Pill className="h-5 w-5 text-success" /> Treatment Plan
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -175,15 +235,35 @@ const Diagnose = () => {
                   </ul>
                 </CardContent>
               </Card>
+
+              <Card className="bg-accent/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 font-display text-lg">
+                    <Shield className="h-5 w-5 text-primary" /> Prevention Tips
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {result.prevention.map((p, i) => (
+                      <li key={i} className="flex gap-3 text-sm">
+                        <Leaf className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             </>
           )}
 
           {!diagnosing && !result && (
             <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center p-12 text-center">
-                <Leaf className="mb-4 h-10 w-10 text-muted-foreground/40" />
-                <p className="font-display font-semibold text-muted-foreground">No diagnosis yet</p>
-                <p className="text-sm text-muted-foreground/60">Upload a leaf image to get started</p>
+              <CardContent className="flex flex-col items-center p-16 text-center">
+                <div className="mb-4 rounded-full bg-accent p-4">
+                  <Sparkles className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+                <p className="font-display text-lg font-semibold text-muted-foreground">Awaiting image</p>
+                <p className="mt-1 text-sm text-muted-foreground/60">Upload a leaf photo to start AI analysis</p>
               </CardContent>
             </Card>
           )}
