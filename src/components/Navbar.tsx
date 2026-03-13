@@ -8,6 +8,7 @@ const navItems = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Diagnose", path: "/diagnose" },
   { label: "Alerts", path: "/alerts" },
+  { label: "Crop Health", path: "/crop-health" },
 ];
 
 const Navbar = () => {
